@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3
+#  License: GNU GPLv3 
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -132,7 +132,7 @@ class CloudWatchWrapper:
 
         # Not specified = default (check environment variable)
         if "AlarmActions" not in kwargs:
-            kwargs["AlarmActions"] = os.environ["sns_topic_name"].split(";")
+            kwargs["AlarmActions"] = os.environ["sns_topic_arn"].split(";")
         # If explicit empty, remove them
         elif kwargs["AlarmActions"] == "":
             kwargs.pop("AlarmActions")
@@ -142,7 +142,7 @@ class CloudWatchWrapper:
 
         # Not specified = default (check environment variable)
         if "OKActions" not in kwargs:
-            kwargs["OKActions"] = os.environ["sns_topic_name"].split(";")
+            kwargs["OKActions"] = os.environ["sns_topic_arn"].split(";")
         # If explicit empty, remove them
         elif kwargs["OKActions"] == "":
             kwargs.pop("OKActions")

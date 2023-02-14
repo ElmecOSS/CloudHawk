@@ -47,6 +47,19 @@
             "EvaluationPeriods": 2,
             "Namespace": "CWAgent",
             "Statistic": "Average",
+            "Period": 300
+        },
+        "EC2_CWAgentNoData": {
+            "MetricSpecifications": {
+                "AlarmName": "EC2-CWAgentNoData-",
+                "Threshold": 1,
+                "DynamicCore": "memusedpercent_core_dynamic"
+            },
+            "MetricName": "mem_used_percent",
+            "ComparisonOperator": "LessThanThreshold",
+            "EvaluationPeriods": 1,
+            "Namespace": "CWAgent",
+            "Statistic": "SampleCount",
             "TreatMissingData": "breaching",
             "Period": 300
         },
@@ -61,6 +74,19 @@
             "EvaluationPeriods": 2,
             "Namespace": "CWAgent",
             "Statistic": "Average",
+            "Period": 300
+        },
+        "EC2_network_share_mount": {
+            "MetricSpecifications": {
+                "AlarmName": "EC2-NetworkShareMount-",
+                "Threshold": 1,
+                "DynamicCore": "networksharemount_core_dynamic"
+            },
+            "MetricName": "disk_used_percent",
+            "ComparisonOperator": "LessThanThreshold",
+            "EvaluationPeriods": 1,
+            "Namespace": "CWAgent",
+            "Statistic": "SampleCount",
             "TreatMissingData": "breaching",
             "Period": 300
         },
@@ -195,7 +221,8 @@
                     "serverless"
                 ],
                 "Types": [
-                    "instance"
+                    "instance",
+                    "cluster"
                 ]
             },
             "MetricName": "CPUUtilization",
@@ -349,7 +376,7 @@
             "Statistic": "Average",
             "Period": 300
         },
-        "RDS_ServerlessDatabaseCapacity": {
+        "RDS_ServerlessCapacity": {
             "MetricSpecifications": {
                 "AlarmName": "RDS-ServerlessCapacity-",
                 "Threshold": 0,
@@ -437,7 +464,7 @@
         "ALB_HTTPCode_ELB_5XX_Count": {
             "MetricSpecifications": {
                 "AlarmName": "ALB-Error5XX-",
-                "Threshold": 5.0,
+                "Threshold": 20.0,
                 "Types": [
                     "application"
                 ]
@@ -453,7 +480,7 @@
         "ALB_HTTPCode_Target_5XX_Count": {
             "MetricSpecifications": {
                 "AlarmName": "ALB-Error5XXTarget-",
-                "Threshold": 0.0,
+                "Threshold": 20.0,
                 "Types": [
                     "application"
                 ]
@@ -469,7 +496,7 @@
         "ALB_HTTPCode_Target_4XX_Count": {
             "MetricSpecifications": {
                 "AlarmName": "ALB-Error4XXTarget-",
-                "Threshold": 0.0,
+                "Threshold": 20.0,
                 "Types": [
                     "application"
                 ]
@@ -497,7 +524,56 @@
             "Period": 300
         }
     },
-    "NLB": {},
+    "NLB": {
+        "NLB_Client_Reset_Count": {
+            "MetricSpecifications": {
+                "AlarmName": "NLB-ClientResetCount-",
+                "Threshold": 5.0,
+                "Types": [
+                    "network"
+                ]
+            },
+            "MetricName": "TCP_Client_Reset_Count",
+            "ComparisonOperator": "GreaterThanThreshold",
+            "EvaluationPeriods": 1,
+            "Namespace": "AWS/NetworkELB",
+            "Statistic": "Sum",
+            "TreatMissingData": "notBreaching",
+            "Period": 300
+        },
+        "NLB_Target_Reset_Count": {
+            "MetricSpecifications": {
+                "AlarmName": "NLB-TargetResetCount-",
+                "Threshold": 5.0,
+                "Types": [
+                    "network"
+                ]
+            },
+            "MetricName": "TCP_Target_Reset_Count",
+            "ComparisonOperator": "GreaterThanThreshold",
+            "EvaluationPeriods": 1,
+            "Namespace": "AWS/NetworkELB",
+            "Statistic": "Sum",
+            "TreatMissingData": "notBreaching",
+            "Period": 300
+        },
+        "NLB_ELB_Reset_Count": {
+            "MetricSpecifications": {
+                "AlarmName": "NLB-ELBResetCount-",
+                "Threshold": 5.0,
+                "Types": [
+                    "network"
+                ]
+            },
+            "MetricName": "TCP_ELB_Reset_Count",
+            "ComparisonOperator": "GreaterThanThreshold",
+            "EvaluationPeriods": 1,
+            "Namespace": "AWS/NetworkELB",
+            "Statistic": "Sum",
+            "TreatMissingData": "notBreaching",
+            "Period": 300
+        }
+    },
     "NLBTG": {
         "NLB_UnHealthyHostCount": {
             "MetricSpecifications": {

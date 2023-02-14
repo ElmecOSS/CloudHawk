@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3
+#  License: GNU GPLv3 
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -38,10 +38,10 @@ class CloudWatchEKS:
         Core Override specific for ClusterFailedNodeCount metrics
         """
         # Extract metric list regarding partitions
-        metric_name = "cluster_failed_node_count"
+        metric_name = "EKS_cluster_failed_node_count"
         params = {
             "Namespace": "ContainerInsights",
-            "MetricName": metric_name,
+            "MetricName": "cluster_failed_node_count",
             "Dimensions": [
                 {
                     "Name": "ClusterName",

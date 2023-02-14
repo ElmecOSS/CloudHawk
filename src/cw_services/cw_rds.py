@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3
+#  License: GNU GPLv3 
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -183,7 +183,7 @@ class CloudWatchRDS:
         for metric_name in metric_needed:
             if "DynamicCore" in metric_needed[metric_name]["MetricSpecifications"]:
                 getattr(CloudWatchRDS, metric_needed[metric_name]["MetricSpecifications"]["DynamicCore"])(
-                    database, dbidentifier, cloudwatchclient, default_values)
+                    database, dbidentifier, dbarn, cloudwatchclient, default_values)
             else:
                 alarm_values = Utility.get_default_parameters(
                     monitoring_id=metric_name,

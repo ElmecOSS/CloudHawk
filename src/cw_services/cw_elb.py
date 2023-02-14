@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3
+#  License: GNU GPLv3 
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -33,16 +33,20 @@ class CloudWatchELB:
 
     def __init__(self, elb, cloudwatchclient, default_values):
         ciname = ""
+        cloudid = ""
         if "Tags" not in elb:
             LOGGER.error("elb {elb_arn} does not have Tags".format(
                 elb_arn=elb["LoadBalancerArn"]))
 
         elb_tags = elb.get("Tags", [])
         cluster_name_result = list(
-            filter(lambda tag: tag["Key"] == "eks:cluster-name", elb_tags))
+            filter(lambda tag: tag["Key"] in ["eks:cluster-name","elbv2.k8s.aws/cluster"], elb_tags))
         if len(cluster_name_result) > 0:
             LOGGER.info("Balancer managed by eks cluster")
             ciname = cluster_name_result[0]["Value"]
+            cloudid = "arn:aws:eks:"+os.getenv("region")+":"+os.getenv(
+                    "account_id")+":cluster/"+cluster_name_result[0]["Value"]
+
 
         # Kubernetes Cluster Managed
         if ciname == "":
@@ -71,7 +75,7 @@ class CloudWatchELB:
         for metric_name in metric_needed:
             if "DynamicCore" in metric_needed[metric_name]["MetricSpecifications"]:
                 getattr(CloudWatchELB, metric_needed[metric_name]["MetricSpecifications"]["DynamicCore"])(
-                    elb, ciname, cloudwatchclient, default_values)
+                    elb, ciname, cloudid, cloudwatchclient, default_values)
             else:
                 alarm_values = Utility.get_default_parameters(
                     monitoring_id=metric_name,
@@ -82,7 +86,7 @@ class CloudWatchELB:
                                             CloudWatchELB,
                                             elb,
                                             ciname,
-                                            elb["LoadBalancerArn"],
+                                            cloudid,
                                             alarm_values,
                                             [{
                                                 "Name": "LoadBalancer",
@@ -105,7 +109,7 @@ class CloudWatchELBTG:
         # Kubernetes Cluster Managed
         elbtg_tags = targetgroup.get("Tags", [])
         cluster_name_result = list(
-            filter(lambda tag: tag["Key"] == "eks:cluster-name", elbtg_tags))
+            filter(lambda tag: tag["Key"] in ["eks:cluster-name","elbv2.k8s.aws/cluster"], elbtg_tags))
         if len(cluster_name_result) > 0:
             LOGGER.info("Targetgroup managed by eks cluster")
             ciname = cluster_name_result[0]["Value"]
@@ -134,7 +138,7 @@ class CloudWatchELBTG:
         for metric_name in metric_needed:
             if "DynamicCore" in metric_needed[metric_name]["MetricSpecifications"]:
                 getattr(CloudWatchELBTG, metric_needed[metric_name]["MetricSpecifications"]["DynamicCore"])(
-                    targetgroup, ciname, cloudwatchclient, default_values)
+                    targetgroup, ciname, cloudid, cloudwatchclient, default_values)
             else:
                 alarm_values = Utility.get_default_parameters(
                     monitoring_id=metric_name,

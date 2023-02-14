@@ -52,7 +52,7 @@ def lambda_handler(event, context):
         os.environ["region"] = event["aws_region"]
         os.environ["account_id"] = boto3.client(
             "sts").get_caller_identity().get("Account")
-        os.environ["sns_topic_name"] = "arn:aws:sns:"+os.environ["region"]+":"+os.environ["account_id"]+":"+os.environ["sns_topic_name"]
+        os.environ["sns_topic_arn"] = "arn:aws:sns:"+os.environ["region"]+":"+os.environ["account_id"]+":"+os.environ["sns_topic_name"]
 
         # JSON file reading
         with open("default_values.json") as json_file:

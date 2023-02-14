@@ -1,6 +1,5 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
-#  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
 #  License: GNU GPLv3
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
@@ -49,7 +48,7 @@ class Utility:
         for item in array:
             if item[key] == excepted_key_value:
                 return item[excepted_value]
-        return None
+        return ""
 
     @staticmethod
     def get_name_from_kubetag(kube_key_tag):

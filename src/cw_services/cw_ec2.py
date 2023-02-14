@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3
+#  License: GNU GPLv3 
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -51,16 +51,16 @@ class CloudWatchEC2:
             specific_values[monitoring_id]["CardinalisData"]["EventType"] = specific_values[monitoring_id]["CardinalisData"]["EventType"]["eks"]
             specific_values[monitoring_id]["CardinalisData"]["MonitorComponent"] = specific_values[
                 monitoring_id]["CardinalisData"]["MonitorComponent"]["eks"]
-        elif "windows" in platform_detail.lower() or "sql server" in platform_detail.lower():
-            specific_values[monitoring_id]["CardinalisData"]["EventType"] = specific_values[
-                monitoring_id]["CardinalisData"]["EventType"]["windows"]
-            specific_values[monitoring_id]["CardinalisData"]["MonitorComponent"] = specific_values[
-                monitoring_id]["CardinalisData"]["MonitorComponent"]["windows"]
+        # elif "windows" in platform_detail.lower() or "sql server" in platform_detail.lower():
+        #     specific_values[monitoring_id]["CardinalisData"]["EventType"] = specific_values[
+        #         monitoring_id]["CardinalisData"]["EventType"]["windows"]
+        #     specific_values[monitoring_id]["CardinalisData"]["MonitorComponent"] = specific_values[
+        #         monitoring_id]["CardinalisData"]["MonitorComponent"]["windows"]
         else:
             specific_values[monitoring_id]["CardinalisData"]["EventType"] = specific_values[
-                monitoring_id]["CardinalisData"]["EventType"]["linux"]
+                monitoring_id]["CardinalisData"]["EventType"]["ec2"]
             specific_values[monitoring_id]["CardinalisData"]["MonitorComponent"] = specific_values[
-                monitoring_id]["CardinalisData"]["MonitorComponent"]["linux"]
+                monitoring_id]["CardinalisData"]["MonitorComponent"]["ec2"]
 
         return specific_values[monitoring_id]
 
@@ -73,7 +73,7 @@ class CloudWatchEC2:
         return Utility.get_value_from_dict(diskmetric["Dimensions"], "Name", "path", "Value") == "/"
 
     @staticmethod
-    def memusedpercent_core_dynamic(instance, ciname, cloudid, eksnode, cloudwatchclient, default_values):
+    def memusedpercent_core_dynamic(instance, ciname, cloudid, eksnode, cloudwatchclient, metric_name, default_values):
         """
         Core Override specific for Memory Usage metrics
         """
@@ -87,14 +87,13 @@ class CloudWatchEC2:
             cloudwatchclient, memmetrics["Metrics"])
 
         for memmetric in sanitized_dimensions:
-            monitoring_id = "EC2_mem_used_percent"
             alarm_values = Utility.get_default_parameters(
-                monitoring_id=monitoring_id,
+                monitoring_id=metric_name,
                 item_id=instance["InstanceId"],
                 default_values=default_values,
                 cb=CloudWatchEC2.set_et_mc,
                 extra_params={
-                    "monitoring_id": monitoring_id,
+                    "monitoring_id": metric_name,
                     "platform_detail": instance.get("PlatformDetails", ""),
                     "eksnode": eksnode,
                     "default_values": default_values
@@ -102,8 +101,8 @@ class CloudWatchEC2:
             )
 
             threshold = alarm_values["MetricSpecifications"]["Threshold"]
-            if "DynamicThreshold" in default_values[monitoring_id]["MetricSpecifications"]:
-                threshold = getattr(CloudWatchEC2, default_values[monitoring_id]["MetricSpecifications"]["DynamicThreshold"])(
+            if "DynamicThreshold" in default_values[metric_name]["MetricSpecifications"]:
+                threshold = getattr(CloudWatchEC2, default_values[metric_name]["MetricSpecifications"]["DynamicThreshold"])(
                     instance, alarm_values)
 
             eventtype = None
@@ -129,7 +128,7 @@ class CloudWatchEC2:
                 })
 
     @staticmethod
-    def diskusedpercent_core_dynamic(instance, ciname, cloudid, eksnode, cloudwatchclient, default_values):
+    def diskusedpercent_core_dynamic(instance, ciname, cloudid, eksnode, cloudwatchclient, metric_name, default_values):
         """
         Core Override specific for Disk Usage metrics
         """
@@ -147,26 +146,29 @@ class CloudWatchEC2:
         for diskmetric in sanitized_dimensions:
             diskname = Utility.get_value_from_dict(
                 diskmetric["Dimensions"], "Name", "device", "Value")
+            # Extract disk name from dimension "instance" (windows)
+            if diskname == "":
+                diskname = Utility.get_value_from_dict(
+                diskmetric["Dimensions"], "Name", "instance", "Value").replace(":","")
             # FSType filtering (only if the path is not root)
             is_wanted_type_disk = True
             if not CloudWatchEC2.disk_root_check(diskmetric):
                 is_wanted_type_disk = Utility.get_value_from_dict(
-                    diskmetric["Dimensions"], "Name", "fstype", "Value") not in ["tmpfs", "overlay", "nfs4", "devtmpfs"]
+                    diskmetric["Dimensions"], "Name", "fstype", "Value") not in ["tmpfs", "overlay", "nfs4", "devtmpfs", "cifs", "nfs"]
             else:
                 diskname = "Root"
             # PATH filtering
             there_is_no_kubelet = "kubelet" not in Utility.get_value_from_dict(
                 diskmetric["Dimensions"], "Name", "path", "Value")
             if is_wanted_type_disk and there_is_no_kubelet:
-                monitoring_id = "EC2_disk_used_percent"
 
                 alarm_values = Utility.get_default_parameters(
-                    monitoring_id=monitoring_id,
+                    monitoring_id=metric_name,
                     item_id_components=[diskname, instance["InstanceId"]],
                     default_values=default_values,
                     cb=CloudWatchEC2.set_et_mc,
                     extra_params={
-                        "monitoring_id": monitoring_id,
+                        "monitoring_id": metric_name,
                         "platform_detail": instance.get("PlatformDetails", ""),
                         "eksnode": eksnode,
                         "default_values": default_values
@@ -174,8 +176,8 @@ class CloudWatchEC2:
                 )
 
                 threshold = alarm_values["MetricSpecifications"]["Threshold"]
-                if "DynamicThreshold" in default_values[monitoring_id]["MetricSpecifications"]:
-                    threshold = getattr(CloudWatchEC2, default_values[monitoring_id]["MetricSpecifications"]["DynamicThreshold"])(
+                if "DynamicThreshold" in default_values[metric_name]["MetricSpecifications"]:
+                    threshold = getattr(CloudWatchEC2, default_values[metric_name]["MetricSpecifications"]["DynamicThreshold"])(
                         instance, alarm_values)
 
                 eventtype = None
@@ -199,6 +201,75 @@ class CloudWatchEC2:
                     kwargs={
                         **alarm_values
                     })
+
+    @staticmethod
+    def networksharemount_core_dynamic(instance, ciname, cloudid, eksnode, cloudwatchclient, metric_name, default_values):
+        """
+        Core Override specific for Network Share Mount metrics (custom)
+        """
+
+        # List of metrics about partitions
+        diskmetrics = CloudWatchWrapper.list_metrics(cloudwatchclient, {"Namespace": "CWAgent", "MetricName": "disk_used_percent",
+                                                                        "Dimensions": [
+                                                                            {"Name": "InstanceId", "Value": instance["InstanceId"]}],
+                                                                        "RecentlyActive": "PT3H"})
+
+        sanitized_dimensions = Utility.sanitize_metrics(
+            cloudwatchclient, diskmetrics["Metrics"])
+
+        # Extract of all disks other than temporary ones
+        for diskmetric in sanitized_dimensions:
+            diskname = Utility.get_value_from_dict(
+                diskmetric["Dimensions"], "Name", "path", "Value")
+            # FSType filtering (only if the path is not root)
+            is_wanted_type_disk = False
+            is_wanted_type_disk = Utility.get_value_from_dict(
+                diskmetric["Dimensions"], "Name", "fstype", "Value") in ["nfs4", "cifs", "nfs"]
+            # PATH filtering
+            there_is_no_kubelet = "kubelet" not in Utility.get_value_from_dict(
+                diskmetric["Dimensions"], "Name", "path", "Value")
+            if is_wanted_type_disk and there_is_no_kubelet:
+
+                alarm_values = Utility.get_default_parameters(
+                    monitoring_id=metric_name,
+                    item_id_components=[diskname, instance["InstanceId"]],
+                    default_values=default_values,
+                    cb=CloudWatchEC2.set_et_mc,
+                    extra_params={
+                        "monitoring_id": metric_name,
+                        "platform_detail": instance.get("PlatformDetails", ""),
+                        "eksnode": eksnode,
+                        "default_values": default_values
+                    }
+                )
+
+                threshold = alarm_values["MetricSpecifications"]["Threshold"]
+                if "DynamicThreshold" in default_values[metric_name]["MetricSpecifications"]:
+                    threshold = getattr(CloudWatchEC2, default_values[metric_name]["MetricSpecifications"]["DynamicThreshold"])(
+                        instance, alarm_values)
+
+                eventtype = None
+                monitorcomponent = None
+                impact = None
+                if "CardinalisData" in alarm_values:
+                    eventtype = alarm_values["CardinalisData"]["EventType"]
+                    monitorcomponent = alarm_values["CardinalisData"]["MonitorComponent"]
+                    impact = alarm_values["CardinalisData"]["Impact"]
+                    del alarm_values["CardinalisData"]
+                del alarm_values["MetricSpecifications"]
+                alarm_values["Threshold"] = threshold
+                alarm_values["Dimensions"] = diskmetric["Dimensions"]
+                CloudWatchWrapper.create_metric_alarm(
+                    cloudwatchclient,
+                    ci=ciname,
+                    cloudid=cloudid,
+                    eventtype=eventtype,
+                    monitorcomponent=monitorcomponent,
+                    impact=impact,
+                    kwargs={
+                        **alarm_values
+                    })
+
 
     @staticmethod
     def cpucreditbalance_creation_dynamic(instance, alarm_values):
@@ -255,7 +326,7 @@ class CloudWatchEC2:
         for metric_name in metric_needed:
             if "DynamicCore" in metric_needed[metric_name]["MetricSpecifications"]:
                 getattr(CloudWatchEC2, metric_needed[metric_name]["MetricSpecifications"]["DynamicCore"])(
-                    instance, ciname, cloudid, eksnode, cloudwatchclient, default_values)
+                    instance, ciname, cloudid, eksnode, cloudwatchclient, metric_name, default_values)
             else:
                 alarm_values = Utility.get_default_parameters(
                     monitoring_id=metric_name,

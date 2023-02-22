@@ -210,7 +210,7 @@ The "Configuration Item" is defined inside the code with the following rules:
 - EFS: resource tag ``Name`` 
 - EKS: resource tag ``Name`` 
 - ELB
-    - If managed by EKS (has tag ``eks:cluster-name`` or ``kubernetes.io/cluster/``): EKS Cluster Name 
+    - If managed by EKS (has tag ``eks:cluster-name``, ``elbv2.k8s.aws/cluster`` or ``kubernetes.io/cluster/``): EKS Cluster Name 
     - Altrimenti: resource ``LoadBalancerName`` 
 - OpenSearch: resource ``DomainName`` 
 - RDS: resource ``DBInstanceIdentifier`` or ``DBClusterIdentifier`` 
@@ -227,7 +227,7 @@ The "Configuration Item" is defined inside the code with the following rules:
 - EFS: resource ``FileSystemId`` 
 - EKS: Cluster ``arn``
 - ELB
-    - If managed by EKS (has tag ``eks:cluster-name`` or ``kubernetes.io/cluster/``): EKS Cluster ARN 
+    - If managed by EKS (has tag ``eks:cluster-name``, ``elbv2.k8s.aws/cluster`` or ``kubernetes.io/cluster/``): EKS Cluster ARN 
     - Altrimenti: resource ``LoadBalancerARN``
 - OpenSearch: resource ``ARN``
 - RDS: resource ``DBInstanceArn`` or ``DBClusterArn`` 

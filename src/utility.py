@@ -38,7 +38,7 @@ class Utility:
     def get_value_from_dict(array, key, excepted_key_value, excepted_value):
         """
         This method is used to extract the value from a desired key inside a dictionary.
-        array = [{'Name': 'path', 'Value': '/'}] 
+        array = [{'Name': 'path', 'Value': '/'}]
         In this case:
         - key = Name
         - excepted_key_value = Path
@@ -50,16 +50,28 @@ class Utility:
                 return item[excepted_value]
         return ""
 
-    @staticmethod
-    def get_name_from_kubetag(kube_key_tag):
+    @ staticmethod
+    def get_name_from_kubetag(tags):
         """
-        This method is used to extract the name of the configuration item from the resource tag.
-        The key has the following format: kubernetes.io/cluster/NAME
-        :return:: nome of the cluster
+        This method is used to extract the name of the EKS cluster from the resource tag.
+        The key can have one of the following format (KEY:VALUE): 
+        - kubernetes.io/cluster/[CLUSTERNAME]: owned
+        - eks:cluster-name: [CLUSTERNAME]
+        - elbv2.k8s.aws/cluster: [CLUSTERNAME]
+        :return:: nome of the cluster (if present)
         """
-        splitted_string = kube_key_tag
-        if len(splitted_string) > 0:
-            return kube_key_tag.split("/")[-1]
+
+        # Check if cluster is managed
+        desired_tags_values = ["elbv2.k8s.aws/cluster", "eks:cluster-name"]
+        desired_tags_key = ["kubernetes.io/cluster/"]
+        for tag in tags:
+            for desired_tag in desired_tags_values:
+                if desired_tag  in tag["Key"]:
+                    return tag["Value"]
+            for desired_tag in desired_tags_key:
+                if desired_tag  in tag["Key"]:
+                    return tag["Key"].split("/")[-1]
+
         return ""
 
     @staticmethod

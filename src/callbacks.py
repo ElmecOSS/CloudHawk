@@ -67,7 +67,7 @@ class Callbacks:
             CloudWatchELB(nlb, cloudwatchclient, default_values_nlb)
 
     @staticmethod
-    def callback_elb_tg(alb_tg_list, nlb_tg_list, targetgroups_tags, cloudwatchclient, default_values_alb_tg, default_values_nlb_tg):
+    def callback_elb_tg(alb_tg_list, nlb_tg_list, cloudwatchclient, default_values_alb_tg, default_values_nlb_tg):
         for elbtg in alb_tg_list:
             CloudWatchELBTG(elbtg, cloudwatchclient, default_values_alb_tg)
         for nlbtg in nlb_tg_list:

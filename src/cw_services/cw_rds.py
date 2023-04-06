@@ -20,7 +20,6 @@
 
 import logging
 import boto3
-import json
 import re
 
 from utility import Utility
@@ -58,8 +57,10 @@ class CloudWatchRDS:
         :return: Threshold value to be used
         """
         # Specifies the allocated storage size specified in gibibytes (GiB).
-        # ["AllocatedStorage"] in GiB. 25% OS reserved.
+        # ["AllocatedStorage"] in GiB.
         # https://docs.aws.amazon.com/opensearch-service/latest/developerguide/sizing-domains.html
+        
+        # Check if it's present the autoscaling feature for storage
         disk_size = 1073741824*((database["AllocatedStorage"]))
         # Threshold in MB
         # 10 GiB = 10.737,4 megabytes

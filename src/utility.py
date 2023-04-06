@@ -19,7 +19,6 @@
 
 import logging
 import copy
-from threading import local
 from cw_services.cw_wrapper import CloudWatchWrapper
 from boto3.dynamodb.conditions import Key, Attr
 import os
@@ -75,7 +74,7 @@ class Utility:
         return ""
 
     @staticmethod
-    def sanitize_metrics(cloudwatchclient, metrics):
+    def sanitize_metrics(cloudwatchclient, metrics, filter_key):
         # Single metric, no action needeed
         if len(metrics) == 1 or len(metrics) == 0:
             return metrics
@@ -86,7 +85,7 @@ class Utility:
             grouped_metric = {}
             for metric in metrics:
                 local_key = Utility.get_value_from_dict(
-                    metric["Dimensions"], "Name", "path", "Value")
+                    metric["Dimensions"], filter_key["key"], filter_key["excepted_key_value"], filter_key["excepted_value"])
                 if local_key not in grouped_metric:
                     grouped_metric[local_key] = []
                 grouped_metric[local_key].append(metric)

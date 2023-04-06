@@ -2,6 +2,8 @@ AWS monitoring
 
 [[_TOC_]]
 
+# Description
+
 Scan AWS account (in a specific region) looking for supported resources with predefined tags and create monitoring alarms through CloudWatch.
 
 # Supported resources
@@ -22,51 +24,58 @@ On your AWS account, in the same region:
 - Create an [SNS Topic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html) with a subscription for alarm notifications
 - (Optional) Create a [DynamoDB Table](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html) for alarm granularity (see [Alarm Granularity](#alarm-granularity))
 
+## Variables
+|Variables|Description|Export|Arguments|Supported Values|
+|--------|-----------|-----|----|----|
+|filter_tag_key|Tag key applied to resources to be monitored| ``$env:filter_tag_key="CWMon"`` (Windows)<br/>``export filter_tag_key="CWMon"``(Linux)|``--filter_tag_key="CWMon"``|---|
+|filter_tag_value|Tag value applied to resources to be monitored| ``$env:filter_tag_value="yes"`` (Windows)<br/>``export filter_tag_value="yes"``(Linux)|``--filter_tag_value="yes"``|---|
+|aws_region|AWS region where to scan resources and apply monitoring| ``$env:aws_region="eu-west-1"`` (Windows)<br/>``export aws_region="eu-west-1"``(Linux)|``--aws_region="eu-west-1"``|AWS region codes|
+|sns_topic_name|SNS Topic name (or multiple names splitted with ;) used as destination for alarm/ok actions.| ``$env:sns_topic_name="CloudWatchAlert"`` (Windows)<br/>``export sns_topic_name="CloudWatchAlert"``(Linux)|``--sns_topic_name="CloudWatchAlert"``|Topic Names in the same region of scanned resources.|
+|aws_account_alias_key|(Optional) Name of the label that can identify your AWS account. <br/> This key will be inside a JSON in  the "AlarmDescription". If ``aws_account_alias_value`` is exported, the default value of this variable will be **account_alias**| ``$env:aws_account_alias_key="Env"`` (Windows)<br/>``export aws_account_alias_key="Env"``(Linux)|``--aws_account_alias_key="Env"``|---|
+|aws_account_alias_value|(Optional) A custom alias for your AWS Account that will be shown inside a JSON in the "AlarmDescription"| ``$env:aws_account_alias_value="Prod"`` (Windows)<br/>``export aws_account_alias_value="Prod"``(Linux)|``--aws_account_alias_value="Prod"``|---|
+|alarm_prefix|(Optional) Prefix used inside CloudWath alarm names. <br/>❗ Changing Alarm Prexif will create new alarms|``$env:alarm_prefix="MyAlarm"`` (Windows)<br/>``export alarm_prefix="MyAlarm"`` (Linux)|``--alarm_prefix="MyAlarm"``|---|
+|db_table_name|Name of the DynamoDB table used for alarm granularity <br/>(see [Alarm Granularity](#alarm-granularity))|``$env:db_table_name="CloudWatch-Monitoring-Alarms"`` (Windows)<br/>``export db_table_name="CloudWatch-Monitoring-Alarms"`` (Linux)|``--db_table_name="CloudWatch-Monitoring-Alarms"``|DynamoDB Table in the same region of the scanned resources|
+|log|Log level of the script| ``$env:log="DEBUG"`` (Windows)<br/>``export log="DEBUG"``(Linux)|``--log="DEBUG"``|"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"|
+|exclude|Provider Service exclusion|``$env:exclude="ec2"`` (Windows)<br/>``export exclude="ec2"``(Linux)|``--exclude="ec2"``| [see exclusions](#exclude-services)|
+|include|Provider Service inclusion|``$env:include="ec2"`` (Windows)<br/>``export include="ec2"``(Linux)|``--include="ec2"``| [vedi exclusions](#exclude-services)|
+
 Where you want to run the script:
 1. Make sure you have installed the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and are authenticated to your AWS Account
-2. Export environment variables:
-    - ``filter_tag_key``: Tag key applied to resources to be monitored
-    - ``filter_tag_value``: Tag value applied to resources to be monitored
-    - ``aws_region``: AWS region where to scan resources and apply monitoring
-    - ``sns_topic_name``: SNS Topic name (or multiple names splitted with ;) used as destination for alarm/ok actions. Must be in the same region of the scanned resources.
-    - ``aws_account_alias_key``: (Optional) Name of the label that can identify your AWS account. This key will be inside a JSON in  the "AlarmDescription". If ``aws_account_alias_value`` is exported, the default value of this variable will be **account_alias**
-    - ``aws_account_alias_value``: (Optional) A custom alias for your AWS Account that will be shown inside a JSON in the "AlarmDescription"
-    - ``alarm_prefix``: (Optional) Prefix used inside CloudWath alarm names. 
-    > Changing Alarm Prexif will create new alarms
-    - ``db_table_name``: (Optional) Name of the DynamoDB table used for alarm granularity (see [Alarm Granularity](#alarm-granularity))
+2. Export environment variables [see varibles](#variables). Examples:
+    |Windows|Linux|
+    |-------|-----|
+    |``$env:filter_tag_key="CWMon"``<br/>``$env:filter_tag_value="yes"``<br/>``$env:aws_region="eu-west-1"``<br/>``$env:sns_topic_name="CloudWatchAlert"``<br/>``$env:aws_account_alias_key="Env"``<br/>``$env:aws_account_alias_value="Prod"``<br/>``$env:alarm_prefix="MyAlarm"``<br/>``$env:db_table_name="CloudWatch-Monitoring-Alarms"``|``export filter_tag_key="CWMon"``<br/>``export filter_tag_value="yes"``<br/>``export aws_region="eu-west-1"``<br/>``export sns_topic_name="CloudWatchAlert"``<br/>``export aws_account_alias_key="Env"``<br/>``export aws_account_alias_value="Prod"``<br/>``export alarm_prefix="MyAlarm"``<br/>``export db_table_name="CloudWatch-Monitoring-Alarms"``<br/>|
 
-Example for Windows Powershell:
-```
-$env:filter_tag_key="CWMon"
-$env:filter_tag_value="yes"
-$env:aws_region="eu-west-1"
-$env:sns_topic_name="CloudWatchAlert"
-$env:aws_account_alias_key="Env"
-$env:aws_account_alias_value="Prod"
-$env:alarm_prefix="MyAlarm"
-$env:db_table_name="CloudWatch-Monitoring-Alarms"
-```
-
-Example for Linux:
-```
-export filter_tag_key="CWMon"
-export filter_tag_value="yes"
-export aws_region="eu-west-1"
-export sns_topic_name="CloudWatchAlert"
-export aws_account_alias_key="Env"
-export aws_account_alias_value="Prod"
-export alarm_prefix="MyAlarm"
-export db_table_name="CloudWatch-Monitoring-Alarms"
-```
 3. Check if alarms defined in [``default_values.json``](./src/default_values.json) are correct for your use case (see [JSON format](#json-format)))
 4. Make sure you have installed **Python** and PIP dependencies defined in [requirements](./requirements.txt):
-```
-pip install -r requirements.txt
-```
+    |Windows|Linux|
+    |-------|-----|
+    |``py -m pip install -r requirements.txt``|``pip install -r requirements.txt``|
 5. Run [``main.py``](./src/main.py)
-```
-python main.py
-```
+    - Run without parameters
+        |Windows|Linux|
+        |-------|-----|
+        |``py main.py``|``python main.py``|
+    - Run with parameters
+        |Windows|Linux|
+        |-------|-----|
+        |``py main.py --filter_tag_key="CWMon" --filter_tag_value="yes" --aws_region="eu-west-1" --sns_topic_name="CloudWatchAlert" --aws_account_alias_key="Env" --aws_account_alias_value="Prod" --alarm_prefix="MyAlarm" --db_table_name="CloudWatch-Monitoring-Alarms"``|``python main.py --filter_tag_key="CWMon" --filter_tag_value="yes" --aws_region="eu-west-1" --sns_topic_name="CloudWatchAlert" --aws_account_alias_key="Env" --aws_account_alias_value="Prod" --alarm_prefix="MyAlarm" --db_table_name="CloudWatch-Monitoring-Alarms"``|
+
+# Exclude services
+To exclude services it's possible to use the parameter ``--exclude`` followed to a comma separated list of services. (Example ``--exclude ec2,rds,s3,ecr``)
+It's also possible to exclude all services and include only specific using the parameter``--include`` with the comma separated value of services to include (example ``--include ec2,rds,s3,ecr``).
+
+❗NOTE: It's not possible to use both ``--include`` e ``--exclude``
+
+Supported values are:
+
+- ec2
+- rds
+- elbv2
+- efs
+- eks
+- acm
+- opensearch
 
 # JSON format
 Inside [``default_values.json``](./src/default_values.json) contains the information of each alarm to be created.
@@ -191,7 +200,6 @@ In ``default_values.json`` there are alarm definitions with specific logic:
 Additionally, in ``main.py`` some types of resources are filtered out during listing:
 - **EC2**: Only instances in state ``"pending", "running", "stopping", "stopped"`` will be considered
 - **EBS**: Only volumes in state ``"in-use"`` will be considered
-- **ACM**: Only certificates with ``RenewalEligibility`` equals to ``"INELIGIBLE"`` will be considered
 
 # Alarm Description
 By default the description of the alarms contains a json with the following information:

@@ -19,7 +19,6 @@
 # ______________________________________________________
 
 import logging
-import copy
 import re
 import os
 import boto3
@@ -77,16 +76,15 @@ class CloudWatchEC2:
         """
         Core Override specific for Memory Usage metrics
         """
+        platform_detail = instance.get("PlatformDetails", "")
 
         # List of metrics about partitions
         memmetrics = CloudWatchWrapper.list_metrics(cloudwatchclient, {"Namespace": "CWAgent", "MetricName": "mem_used_percent",
                                                                        "Dimensions": [
                                                                            {"Name": "InstanceId", "Value": instance["InstanceId"]}],
-                                                                       "RecentlyActive": "PT3H"})
-        sanitized_dimensions = Utility.sanitize_metrics(
-            cloudwatchclient, memmetrics["Metrics"])
+                                                                       "RecentlyActive": "PT3H"})["Metrics"]
 
-        for memmetric in sanitized_dimensions:
+        for memmetric in memmetrics:
             alarm_values = Utility.get_default_parameters(
                 monitoring_id=metric_name,
                 item_id=instance["InstanceId"],
@@ -130,8 +128,20 @@ class CloudWatchEC2:
     @staticmethod
     def diskusedpercent_core_dynamic(instance, ciname, cloudid, eksnode, cloudwatchclient, metric_name, default_values):
         """
-        Core Override specific for Disk Usage metrics
+        Core Override specific for Disk Usage metrics (Linux)
         """
+        platform_detail = instance.get("PlatformDetails", "")
+
+        filter_key={
+            "key": "Name",
+            "excepted_key_value": "path",
+            "excepted_value": "Value"
+        }
+        diskname_key={
+            "key": "Name",
+            "excepted_key_value": "device",
+            "excepted_value": "Value"
+        }
 
         # List of metrics about partitions
         diskmetrics = CloudWatchWrapper.list_metrics(cloudwatchclient, {"Namespace": "CWAgent", "MetricName": "disk_used_percent",
@@ -140,21 +150,17 @@ class CloudWatchEC2:
                                                                         "RecentlyActive": "PT3H"})
 
         sanitized_dimensions = Utility.sanitize_metrics(
-            cloudwatchclient, diskmetrics["Metrics"])
+            cloudwatchclient, diskmetrics["Metrics"],filter_key)
 
         # Extract of all disks other than temporary ones
         for diskmetric in sanitized_dimensions:
             diskname = Utility.get_value_from_dict(
-                diskmetric["Dimensions"], "Name", "device", "Value")
-            # Extract disk name from dimension "instance" (windows)
-            if diskname == "":
-                diskname = Utility.get_value_from_dict(
-                diskmetric["Dimensions"], "Name", "instance", "Value").replace(":","")
+                diskmetric["Dimensions"], diskname_key["key"], diskname_key["excepted_key_value"], diskname_key["excepted_value"])
             # FSType filtering (only if the path is not root)
             is_wanted_type_disk = True
             if not CloudWatchEC2.disk_root_check(diskmetric):
                 is_wanted_type_disk = Utility.get_value_from_dict(
-                    diskmetric["Dimensions"], "Name", "fstype", "Value") not in ["tmpfs", "overlay", "nfs4", "devtmpfs", "cifs", "nfs"]
+                    diskmetric["Dimensions"], "Name", "fstype", "Value") not in ["tmpfs", "overlay", "nfs4", "devtmpfs", "cifs", "nfs", "squashfs", "vfat"]
             else:
                 diskname = "Root"
             # PATH filtering
@@ -169,7 +175,90 @@ class CloudWatchEC2:
                     cb=CloudWatchEC2.set_et_mc,
                     extra_params={
                         "monitoring_id": metric_name,
-                        "platform_detail": instance.get("PlatformDetails", ""),
+                        "platform_detail": platform_detail,
+                        "eksnode": eksnode,
+                        "default_values": default_values
+                    }
+                )
+
+                threshold = alarm_values["MetricSpecifications"]["Threshold"]
+                if "DynamicThreshold" in default_values[metric_name]["MetricSpecifications"]:
+                    threshold = getattr(CloudWatchEC2, default_values[metric_name]["MetricSpecifications"]["DynamicThreshold"])(
+                        instance, alarm_values)
+
+                eventtype = None
+                monitorcomponent = None
+                impact = None
+                if "CardinalisData" in alarm_values:
+                    eventtype = alarm_values["CardinalisData"]["EventType"]
+                    monitorcomponent = alarm_values["CardinalisData"]["MonitorComponent"]
+                    impact = alarm_values["CardinalisData"]["Impact"]
+                    del alarm_values["CardinalisData"]
+                del alarm_values["MetricSpecifications"]
+                alarm_values["Threshold"] = threshold
+                alarm_values["Dimensions"] = diskmetric["Dimensions"]
+                CloudWatchWrapper.create_metric_alarm(
+                    cloudwatchclient,
+                    ci=ciname,
+                    cloudid=cloudid,
+                    eventtype=eventtype,
+                    monitorcomponent=monitorcomponent,
+                    impact=impact,
+                    kwargs={
+                        **alarm_values
+                    })
+
+    @staticmethod
+    def diskfreepercent_core_dynamic(instance, ciname, cloudid, eksnode, cloudwatchclient, metric_name, default_values):
+        """
+        Core Override specific for Disk Free metrics (Windows)
+        """
+        platform_detail = instance.get("PlatformDetails", "")
+
+        filter_key={
+            "key": "Name",
+            "excepted_key_value": "instance",
+            "excepted_value": "Value"
+        }
+        diskname_key={
+            "key": "Name",
+            "excepted_key_value": "instance",
+            "excepted_value": "Value"
+        }
+
+        # List of metrics about partitions
+        diskmetrics = CloudWatchWrapper.list_metrics(cloudwatchclient, {"Namespace": "CWAgent", "MetricName": "disk_free_percent",
+                                                                        "Dimensions": [
+                                                                            {"Name": "InstanceId", "Value": instance["InstanceId"]}],
+                                                                        "RecentlyActive": "PT3H"})
+
+        sanitized_dimensions = Utility.sanitize_metrics(
+            cloudwatchclient, diskmetrics["Metrics"],filter_key)
+
+        # Extract of all disks other than temporary ones
+        for diskmetric in sanitized_dimensions:
+            diskname = Utility.get_value_from_dict(
+                diskmetric["Dimensions"], diskname_key["key"], diskname_key["excepted_key_value"], diskname_key["excepted_value"]).replace(":","")
+            # FSType filtering (only if the path is not root)
+            is_wanted_type_disk = True
+            if not CloudWatchEC2.disk_root_check(diskmetric):
+                is_wanted_type_disk = Utility.get_value_from_dict(
+                    diskmetric["Dimensions"], "Name", "fstype", "Value") not in ["tmpfs", "overlay", "nfs4", "devtmpfs", "cifs", "nfs", "squashfs", "vfat"]
+            else:
+                diskname = "Root"
+            # PATH filtering
+            there_is_no_kubelet = "kubelet" not in Utility.get_value_from_dict(
+                diskmetric["Dimensions"], "Name", "path", "Value")
+            if is_wanted_type_disk and there_is_no_kubelet:
+
+                alarm_values = Utility.get_default_parameters(
+                    monitoring_id=metric_name,
+                    item_id_components=[diskname, instance["InstanceId"]],
+                    default_values=default_values,
+                    cb=CloudWatchEC2.set_et_mc,
+                    extra_params={
+                        "monitoring_id": metric_name,
+                        "platform_detail": platform_detail,
                         "eksnode": eksnode,
                         "default_values": default_values
                     }
@@ -207,6 +296,32 @@ class CloudWatchEC2:
         """
         Core Override specific for Network Share Mount metrics (custom)
         """
+        platform_detail = instance.get("PlatformDetails", "")
+
+        filter_key={}
+        diskname_key={}
+        if "windows" in platform_detail.lower() or "sql server" in platform_detail.lower():
+            filter_key={
+                "key": "Name",
+                "excepted_key_value": "instance",
+                "excepted_value": "Value"
+            }
+            diskname_key={
+                "key": "Name",
+                "excepted_key_value": "instance",
+                "excepted_value": "Value"
+            }
+        else:
+            filter_key={
+                "key": "Name",
+                "excepted_key_value": "path",
+                "excepted_value": "Value"
+            }
+            diskname_key={
+                "key": "Name",
+                "excepted_key_value": "device",
+                "excepted_value": "Value"
+            }
 
         # List of metrics about partitions
         diskmetrics = CloudWatchWrapper.list_metrics(cloudwatchclient, {"Namespace": "CWAgent", "MetricName": "disk_used_percent",
@@ -215,7 +330,7 @@ class CloudWatchEC2:
                                                                         "RecentlyActive": "PT3H"})
 
         sanitized_dimensions = Utility.sanitize_metrics(
-            cloudwatchclient, diskmetrics["Metrics"])
+            cloudwatchclient, diskmetrics["Metrics"],filter_key)
 
         # Extract of all disks other than temporary ones
         for diskmetric in sanitized_dimensions:
@@ -270,7 +385,6 @@ class CloudWatchEC2:
                         **alarm_values
                     })
 
-
     @staticmethod
     def cpucreditbalance_creation_dynamic(instance, alarm_values):
         """
@@ -288,14 +402,14 @@ class CloudWatchEC2:
         eksnode = False
         autoscaling = False
 
+        cluster_name_result = Utility.get_name_from_kubetag(instance["Tags"])
         # Kubernetes Cluster Managed
-        cluster_name_result = list(
-            filter(lambda tag: tag["Key"] == "eks:cluster-name", instance["Tags"]))
-        if len(cluster_name_result) > 0:
+        
+        if cluster_name_result != "":
             LOGGER.info("Instance managed by eks cluster")
-            ciname = cluster_name_result[0]["Value"]
+            ciname = cluster_name_result
             cloudid = "arn:aws:eks:"+os.getenv("region")+":"+os.getenv(
-                "account_id")+":cluster/"+cluster_name_result[0]["Value"]
+                    "account_id")+":cluster/"+cluster_name_result
             eksnode = True
 
         # Autoscaling Managed

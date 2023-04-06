@@ -19,7 +19,6 @@
 # ______________________________________________________
 
 import logging
-import copy
 
 from cw_services.cw_wrapper import CloudWatchWrapper
 from utility import Utility

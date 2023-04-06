@@ -23,8 +23,6 @@ import logging
 import os
 import decimal
 
-import boto3
-
 LOGGER = logging.getLogger()
 
 
@@ -108,6 +106,7 @@ class CloudWatchWrapper:
 
         # Check if AlarmDescription has not been explicitly specified
         alarmdescription = ""
+        alarm = None
         if "AlarmDescription" not in kwargs:
             jsonalarmdescription = {}
             if "aws_account_alias_key" in os.environ and "aws_account_alias_value" in os.environ:
@@ -152,13 +151,15 @@ class CloudWatchWrapper:
 
         try:
             CloudWatchWrapper.replace_decimals(kwargs)
-            alarm = cloudwatchclient.put_metric_alarm(
-                AlarmDescription=alarmdescription,
-                **kwargs)
+            need_create=kwargs.pop("Create",True)
+            if need_create:
+                alarm = cloudwatchclient.put_metric_alarm(
+                    AlarmDescription=alarmdescription,
+                    **kwargs)
 
-            LOGGER.info(
-                "Added/Modified alarm %s to track metric %s.%s.", kwargs["AlarmName"], kwargs["Namespace"],
-                kwargs["MetricName"])
+                LOGGER.info(
+                    "Added/Modified alarm %s to track metric %s.%s.", kwargs["AlarmName"], kwargs["Namespace"],
+                    kwargs["MetricName"])
         except:
             LOGGER.exception(
                 "Couldn't add alarm %s to metric %s.%s", kwargs.get(

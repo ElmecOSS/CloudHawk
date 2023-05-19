@@ -29,8 +29,8 @@ from os import environ
 
 
 # Import listing class
-from resource_lister.resource_lister import ResourceLister
-# from resource_lister import ResourceLister
+from ElmecAWSResourceLister.resource_lister import ResourceLister
+
 
 # Import callback class
 from callbacks import Callbacks

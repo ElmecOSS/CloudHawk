@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3 
+#  License: GNU GPLv3
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -132,12 +132,12 @@ class CloudWatchEC2:
         """
         platform_detail = instance.get("PlatformDetails", "")
 
-        filter_key={
+        filter_key = {
             "key": "Name",
             "excepted_key_value": "path",
             "excepted_value": "Value"
         }
-        diskname_key={
+        diskname_key = {
             "key": "Name",
             "excepted_key_value": "device",
             "excepted_value": "Value"
@@ -150,7 +150,7 @@ class CloudWatchEC2:
                                                                         "RecentlyActive": "PT3H"})
 
         sanitized_dimensions = Utility.sanitize_metrics(
-            cloudwatchclient, diskmetrics["Metrics"],filter_key)
+            cloudwatchclient, diskmetrics["Metrics"], filter_key)
 
         # Extract of all disks other than temporary ones
         for diskmetric in sanitized_dimensions:
@@ -215,12 +215,12 @@ class CloudWatchEC2:
         """
         platform_detail = instance.get("PlatformDetails", "")
 
-        filter_key={
+        filter_key = {
             "key": "Name",
             "excepted_key_value": "instance",
             "excepted_value": "Value"
         }
-        diskname_key={
+        diskname_key = {
             "key": "Name",
             "excepted_key_value": "instance",
             "excepted_value": "Value"
@@ -233,12 +233,12 @@ class CloudWatchEC2:
                                                                         "RecentlyActive": "PT3H"})
 
         sanitized_dimensions = Utility.sanitize_metrics(
-            cloudwatchclient, diskmetrics["Metrics"],filter_key)
+            cloudwatchclient, diskmetrics["Metrics"], filter_key)
 
         # Extract of all disks other than temporary ones
         for diskmetric in sanitized_dimensions:
             diskname = Utility.get_value_from_dict(
-                diskmetric["Dimensions"], diskname_key["key"], diskname_key["excepted_key_value"], diskname_key["excepted_value"]).replace(":","")
+                diskmetric["Dimensions"], diskname_key["key"], diskname_key["excepted_key_value"], diskname_key["excepted_value"]).replace(":", "")
             # FSType filtering (only if the path is not root)
             is_wanted_type_disk = True
             if not CloudWatchEC2.disk_root_check(diskmetric):
@@ -298,26 +298,26 @@ class CloudWatchEC2:
         """
         platform_detail = instance.get("PlatformDetails", "")
 
-        filter_key={}
-        diskname_key={}
+        filter_key = {}
+        diskname_key = {}
         if "windows" in platform_detail.lower() or "sql server" in platform_detail.lower():
-            filter_key={
+            filter_key = {
                 "key": "Name",
                 "excepted_key_value": "instance",
                 "excepted_value": "Value"
             }
-            diskname_key={
+            diskname_key = {
                 "key": "Name",
                 "excepted_key_value": "instance",
                 "excepted_value": "Value"
             }
         else:
-            filter_key={
+            filter_key = {
                 "key": "Name",
                 "excepted_key_value": "path",
                 "excepted_value": "Value"
             }
-            diskname_key={
+            diskname_key = {
                 "key": "Name",
                 "excepted_key_value": "device",
                 "excepted_value": "Value"
@@ -330,7 +330,7 @@ class CloudWatchEC2:
                                                                         "RecentlyActive": "PT3H"})
 
         sanitized_dimensions = Utility.sanitize_metrics(
-            cloudwatchclient, diskmetrics["Metrics"],filter_key)
+            cloudwatchclient, diskmetrics["Metrics"], filter_key)
 
         # Extract of all disks other than temporary ones
         for diskmetric in sanitized_dimensions:
@@ -404,12 +404,12 @@ class CloudWatchEC2:
 
         cluster_name_result = Utility.get_name_from_kubetag(instance["Tags"])
         # Kubernetes Cluster Managed
-        
+
         if cluster_name_result != "":
             LOGGER.info("Instance managed by eks cluster")
             ciname = cluster_name_result
             cloudid = "arn:aws:eks:"+os.getenv("region")+":"+os.getenv(
-                    "account_id")+":cluster/"+cluster_name_result
+                "account_id")+":cluster/"+cluster_name_result
             eksnode = True
 
         # Autoscaling Managed
@@ -464,6 +464,6 @@ class CloudWatchEC2:
                                             [{
                                                 "Name": "InstanceId",
                                                 "Value": instance["InstanceId"]
-                                            }], 
+                                            }],
                                             cloudwatchclient
                                             )

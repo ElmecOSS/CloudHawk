@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3 
+#  License: GNU GPLv3
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -31,8 +31,8 @@ class CloudWatchACM:
     """
 
     def __init__(self, ca, cloudwatchclient, default_values):
-        ciname = ca["DomainName"].replace("*","_")
-        
+        ciname = ca["DomainName"].replace("*", "_")
+
         cloudid = ca["CertificateArn"]
         metric_needed = {}
         for metric_name in default_values:

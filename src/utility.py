@@ -65,10 +65,10 @@ class Utility:
         desired_tags_key = ["kubernetes.io/cluster/"]
         for tag in tags:
             for desired_tag in desired_tags_values:
-                if desired_tag  in tag["Key"]:
+                if desired_tag in tag["Key"]:
                     return tag["Value"]
             for desired_tag in desired_tags_key:
-                if desired_tag  in tag["Key"]:
+                if desired_tag in tag["Key"]:
                     return tag["Key"].split("/")[-1]
 
         return ""

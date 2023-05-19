@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3 
+#  License: GNU GPLv3
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -59,7 +59,7 @@ class CloudWatchRDS:
         # Specifies the allocated storage size specified in gibibytes (GiB).
         # ["AllocatedStorage"] in GiB.
         # https://docs.aws.amazon.com/opensearch-service/latest/developerguide/sizing-domains.html
-        
+
         # Check if it's present the autoscaling feature for storage
         disk_size = 1073741824*((database["AllocatedStorage"]))
         # Threshold in MB

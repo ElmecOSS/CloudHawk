@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3 
+#  License: GNU GPLv3
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -110,7 +110,8 @@ class CloudWatchWrapper:
         if "AlarmDescription" not in kwargs:
             jsonalarmdescription = {}
             if "aws_account_alias_key" in os.environ and "aws_account_alias_value" in os.environ:
-                jsonalarmdescription[os.environ["aws_account_alias_key"]] = os.environ["aws_account_alias_value"]
+                jsonalarmdescription[os.environ["aws_account_alias_key"]
+                                     ] = os.environ["aws_account_alias_value"]
             elif "aws_account_alias_key" not in os.environ and "aws_account_alias_value" in os.environ:
                 jsonalarmdescription["account_alias"] = os.environ["aws_account_alias_value"]
             jsonalarmdescription["ci"] = ci
@@ -123,7 +124,7 @@ class CloudWatchWrapper:
             if impact is not None:
                 jsonalarmdescription["impact"] = impact
             alarmdescription = json.dumps(jsonalarmdescription)
-        else: 
+        else:
             alarmdescription = kwargs["AlarmDescription"]
             kwargs.pop("AlarmDescription")
 
@@ -151,7 +152,7 @@ class CloudWatchWrapper:
 
         try:
             CloudWatchWrapper.replace_decimals(kwargs)
-            need_create=kwargs.pop("Create",True)
+            need_create = kwargs.pop("Create", True)
             if need_create:
                 alarm = cloudwatchclient.put_metric_alarm(
                     AlarmDescription=alarmdescription,

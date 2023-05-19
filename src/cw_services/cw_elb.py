@@ -1,7 +1,7 @@
 # ______________________________________________________
 #  Author: Cominoli Luca, Dalle Fratte Andrea
 #  GitHub Source Code: https://github.com/ElmecOSS/CloudHawk
-#  License: GNU GPLv3 
+#  License: GNU GPLv3
 #  Copyright (C) 2022  Elmec Informatica S.p.A.
 
 #  This program is free software: you can redistribute it and/or modify
@@ -41,13 +41,13 @@ class CloudWatchELB:
         elb_tags = elb.get("Tags", [])
 
         cluster_name_result = Utility.get_name_from_kubetag(elb_tags)
-        
+
         # Kubernetes Cluster Managed
         if cluster_name_result != "":
             LOGGER.info("Balancer managed by eks cluster")
             ciname = cluster_name_result
             cloudid = "arn:aws:eks:"+os.getenv("region")+":"+os.getenv(
-                    "account_id")+":cluster/"+cluster_name_result
+                "account_id")+":cluster/"+cluster_name_result
 
         # Basic Instance
         if ciname == "":
@@ -99,13 +99,13 @@ class CloudWatchELBTG:
         # Kubernetes Cluster Managed
         elbtg_tags = targetgroup.get("Tags", [])
         cluster_name_result = Utility.get_name_from_kubetag(elbtg_tags)
-        
+
         # Kubernetes Cluster Managed
         if cluster_name_result != "":
             LOGGER.info("Balancer managed by eks cluster")
             ciname = cluster_name_result
             cloudid = "arn:aws:eks:"+os.getenv("region")+":"+os.getenv(
-                    "account_id")+":cluster/"+cluster_name_result
+                "account_id")+":cluster/"+cluster_name_result
 
         if ciname == "":
             ciname = targetgroup["LoadBalancerArns"][0].split("/")[-2]

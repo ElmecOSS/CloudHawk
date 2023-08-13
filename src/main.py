@@ -113,14 +113,44 @@ def lambda_handler(event, context):
 
         # Boto3 client initialization for supported services
         # Boto3 client initialization for supported services
-        clients = {
-            "ec2": None,
-            "rds": None,
-            "elbv2": None,
-            "efs": None,
-            "eks": None,
-            "acm": None,
-            "opensearch": None
+        services = {
+            "ec2": {
+                "boto_client": "ec2",
+                "excluded": True
+
+            },
+            "rds": {
+                "boto_client": "rds",
+                "excluded": True
+
+            },
+            "elbv2": {
+                "boto_client": "elbv2",
+                "excluded": True
+
+            },
+            "efs": {
+                "boto_client": "efs",
+                "excluded": True
+
+            },
+            "eks": {
+                "boto_client": "eks",
+                "excluded": True
+
+            },
+            "vpn": {
+                "boto_client": "ec2",
+                "excluded": True
+            },
+            "acm": {
+                "boto_client": "acm",
+                "excluded": True
+            },
+            "opensearch": {
+                "boto_client": "opensearch",
+                "excluded": True
+            }
         }
         # Client initialization
         cloudwatchclient = boto3.client(
@@ -128,17 +158,22 @@ def lambda_handler(event, context):
 
         # Exclude = all services except excluded
         if len(services_excluded) > 0 or (len(services_excluded) == 0 and len(services_included) == 0):
-            for client in clients:
-                if client not in services_excluded:
-                    clients[client] = boto3.client(
-                        client, region_name=environ["region"])
+            for service in services:
+                if service not in services_excluded:
+                    # Replace boto_client name with boto client object
+                    services[service]["excluded"] = False
+                    services[service]["boto_client"] = boto3.client(
+                        services[service]["boto_client"], region_name=environ["region"])
+
 
         # Include = no services except included
         if len(services_included) > 0:
-            for client in clients:
-                if client in services_included:
-                    clients[client] = boto3.client(
-                        client, region_name=environ["region"])
+            for service in services:
+                if service in services_included:
+                    # Replace boto_client name with boto client object
+                    services[service]["excluded"] = False
+                    services[service]["boto_client"] = boto3.client(
+                        services[service]["boto_client"], region_name=environ["region"])
 
         start_time = perf_counter()
         resource_lister = ResourceLister(
@@ -146,10 +181,13 @@ def lambda_handler(event, context):
 
         # Resource extraction with the chosen tag
 
-        if clients["ec2"] is not None:
+        if services["ec2"]["excluded"]:
+            LOGGER.info(
+                "EC2 resources skipped due to user exclusion")
+        else:
             try:
                 ec2 = Thread(target=resource_lister.list_ec2,
-                             args=(clients["ec2"],
+                             args=(services["ec2"]["boto_client"],
                                    [{"Name": "tag:" + environ["filter_tag_key"], "Values": [environ["filter_tag_value"]]}, {
                                        "Name": "instance-state-name", "Values": ["pending", "running", "stopping", "stopped"]}],
                                    Callbacks.callback_ec2,
@@ -158,14 +196,15 @@ def lambda_handler(event, context):
                 ec2.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service ec2 excluded by user due to ec2 client exclusion")
 
-        if clients["ec2"] is not None:
+
+        if services["ec2"]["excluded"]:
+            LOGGER.info(
+                "EBS resources skipped due to user exclusion of EC2 client")
+        else:
             try:
                 ebs = Thread(target=resource_lister.list_ebs,
-                             args=(clients["ec2"],
+                             args=(services["ec2"]["boto_client"],
                                    [{"Name": "tag:" + environ["filter_tag_key"], "Values": [
                                     environ["filter_tag_value"]]}, {"Name": "status", "Values": ["in-use"]}],
                                    Callbacks.callback_ebs,
@@ -174,14 +213,15 @@ def lambda_handler(event, context):
                 ebs.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service ebs excluded by user due to ec2 client exclusion")
 
-        if clients["rds"] is not None:
+
+        if services["rds"]["excluded"]:
+            LOGGER.info(
+                "RDS resources skipped due to user exclusion")
+        else:
             try:
                 rds = Thread(target=resource_lister.list_rds,
-                             args=(clients["rds"],
+                             args=(services["rds"]["boto_client"],
                                    None,
                                    None,
                                    Callbacks.callback_rds, (cloudwatchclient, default_values["RDS"])))
@@ -189,14 +229,15 @@ def lambda_handler(event, context):
                 rds.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service rds excluded by user due to rds client exclusion")
 
-        if clients["elbv2"] is not None:
+
+        if services["elbv2"]["excluded"]:
+            LOGGER.info(
+                "ELB resources skipped due to user exclusion")
+        else:
             try:
                 elb = Thread(target=resource_lister.list_elb,
-                             args=(clients["elbv2"],
+                             args=(services["elbv2"]["boto_client"],
                                    None,
                                    Callbacks.callback_elb,
                                    (cloudwatchclient, default_values["ALB"], default_values["NLB"])))
@@ -204,14 +245,15 @@ def lambda_handler(event, context):
                 elb.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service elb excluded by user due to elbv2 client exclusion")
 
-        if clients["elbv2"] is not None:
+
+        if services["elbv2"]["excluded"]:
+            LOGGER.info(
+                "ELB Target Groups resources skipped due to user exclusion of ELB client")
+        else:
             try:
                 elb_tg = Thread(target=resource_lister.list_elbtg,
-                                args=(clients["elbv2"],
+                                args=(services["elbv2"]["boto_client"],
                                       None,
                                       Callbacks.callback_elb_tg,
                                       (cloudwatchclient, default_values["ALBTG"], default_values["NLBTG"])))
@@ -219,14 +261,15 @@ def lambda_handler(event, context):
                 elb_tg.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service elb_tg excluded by user due to elbv2 client exclusion")
 
-        if clients["efs"] is not None:
+
+        if services["efs"]["excluded"]:
+            LOGGER.info(
+                "EFS resources skipped due to user exclusion")
+        else:
             try:
                 efs = Thread(target=resource_lister.list_efs,
-                             args=(clients["efs"],
+                             args=(services["efs"]["boto_client"],
                                    None,
                                    Callbacks.callback_efs,
                                    (cloudwatchclient, default_values["EFS"])))
@@ -234,14 +277,15 @@ def lambda_handler(event, context):
                 efs.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service efs excluded by user due to efs client exclusion")
 
-        if clients["eks"] is not None:
+
+        if services["eks"]["excluded"]:
+            LOGGER.info(
+                "EKS resources skipped due to user exclusion")
+        else:
             try:
                 eks = Thread(target=resource_lister.list_eks,
-                             args=(clients["eks"],
+                             args=(services["eks"]["boto_client"],
                                    None,
                                    Callbacks.callback_eks,
                                    (cloudwatchclient, default_values["EKS"])))
@@ -249,14 +293,15 @@ def lambda_handler(event, context):
                 eks.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service eks excluded by user due to eks client exclusion")
 
-        if clients["ec2"] is not None:
+
+        if services["vpn"]["excluded"]:
+            LOGGER.info(
+                "VPN resources skipped due to user exclusion")
+        else:
             try:
                 vpn = Thread(target=resource_lister.list_vpn,
-                             args=(clients["ec2"],
+                             args=(services["vpn"]["boto_client"],
                                    None,
                                    Callbacks.callback_vpn,
                                    (cloudwatchclient, default_values["VPN"])))
@@ -264,14 +309,15 @@ def lambda_handler(event, context):
                 vpn.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service vpn excluded by user due to ec2 client exclusion")
 
-        if clients["acm"] is not None:
+
+        if services["acm"]["excluded"]:
+            LOGGER.info(
+                "ACM resources skipped due to user exclusion")
+        else:
             try:
                 acm = Thread(target=resource_lister.list_acm,
-                             args=(clients["acm"],
+                             args=(services["acm"]["boto_client"],
                                    #    {"RenewalEligibility": "INELIGIBLE"},
                                    None,
                                    Callbacks.callback_acm,
@@ -280,14 +326,15 @@ def lambda_handler(event, context):
                 acm.join()
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service acm excluded by user due to acm client exclusion")
 
-        if clients["opensearch"] is not None:
+
+        if services["opensearch"]["excluded"]:
+            LOGGER.info(
+                "OpenSearch resources skipped due to user exclusion")
+        else:
             try:
                 opensearch = Thread(target=resource_lister.list_os,
-                                    args=(clients["opensearch"],
+                                    args=(services["opensearch"]["boto_client"],
                                           None,
                                           Callbacks.callback_os,
                                           (cloudwatchclient, default_values["OpenSearch"])))
@@ -296,9 +343,7 @@ def lambda_handler(event, context):
 
             except Exception as error:
                 LOGGER.error(error)
-        else:
-            LOGGER.info(
-                "Service opensearch excluded by user due to opensearch client exclusion")
+
 
         end_time = perf_counter()
         print(f"Completed after {end_time- start_time: 0.2f} second(s).")

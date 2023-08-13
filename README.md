@@ -69,12 +69,13 @@ It's also possible to exclude all services and include only specific using the p
 
 Supported values are:
 
-- ec2
+- ec2 (also impact ebs)
 - rds
-- elbv2
+- elbv2 (also impact target groups)
 - efs
 - eks
 - acm
+- vpn
 - opensearch
 
 # JSON format

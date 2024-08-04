@@ -19,8 +19,10 @@
 # ______________________________________________________
 
 import logging
-import boto3
+import os
 import re
+
+import boto3
 
 from utility import Utility
 
@@ -61,10 +63,10 @@ class CloudWatchRDS:
         # https://docs.aws.amazon.com/opensearch-service/latest/developerguide/sizing-domains.html
 
         # Check if it's present the autoscaling feature for storage
-        disk_size = 1073741824*((database["AllocatedStorage"]))
+        disk_size = 1073741824 * ((database["AllocatedStorage"]))
         # Threshold in MB
         # 10 GiB = 10.737,4 megabytes
-        return disk_size*(alarm_values["MetricSpecifications"]["Threshold"]/100)
+        return disk_size * (alarm_values["MetricSpecifications"]["Threshold"] / 100)
 
     @staticmethod
     def burstbalance_creation_dynamic(database, alarm_values):
@@ -80,7 +82,8 @@ class CloudWatchRDS:
         Creation condition for CPUCreditBalance metrics
         :return: if the metrics needs to be created or not
         """
-        return re.fullmatch(alarm_values["MetricSpecifications"]["RegexType"], database["DBInstanceClass"].replace("db.", "")) is not None
+        return re.fullmatch(alarm_values["MetricSpecifications"]["RegexType"],
+                            database["DBInstanceClass"].replace("db.", "")) is not None
 
     @staticmethod
     def dbconnections_threshold_dynamic(database, alarm_values):
@@ -93,9 +96,18 @@ class CloudWatchRDS:
         # https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Managing.Performance.html
 
         # Extract instance type memory value (assuming EC2 and RDS' instance type match)
-        client_for_instance_type = boto3.client("ec2")
-        instance_types = client_for_instance_type.describe_instance_types(
-            InstanceTypes=[database["DBInstanceClass"].replace("db.", "")])["InstanceTypes"]
+        client_for_instance_type = boto3.client("ec2", region_name=os.getenv("region"))
+        try:
+            instance_types = client_for_instance_type.describe_instance_types(
+                InstanceTypes=[database["DBInstanceClass"].replace("db.", "")])["InstanceTypes"]
+        except:
+            print("Cry so loud because there is not match with that db instance size")
+            # Threshold to 0 is force so that an alarm is raised for it. To set an acceptable value you have these
+            #  options:
+            #  - use DynamoDB
+            #  - Do not run periodically this script
+            #  - Remove the searching tag from resource
+            return 0
         if len(instance_types) > 0:
             # The result from boto3 is in MiB. Needs to be converted in GiB
             # Reference table: https://sysadminxpert.com/aws-rds-max-connections-limit/
@@ -109,27 +121,29 @@ class CloudWatchRDS:
         maxconnection = 0
         divider = None
         db_byte_size = db_GiB_size * 1073741824
-        if database["Engine"] in "aurora-mysql" or database["Engine"] in "aurora" or database["Engine"] in "mariadb" or database["Engine"] in "mysql":
+        if database["Engine"] in "aurora-mysql" or database["Engine"] in "aurora" or database["Engine"] in "mariadb" or \
+                database["Engine"] in "mysql":
             divider = 12582880
-            maxconnection = round(db_byte_size/divider)
+            maxconnection = round(db_byte_size / divider)
             if maxconnection > 16000:
                 maxconnection = 16000
-        elif database["Engine"] in "oracle-ee" or database["Engine"] in "oracle-se2" or database["Engine"] in "oracle-se":
+        elif database["Engine"] in "oracle-ee" or database["Engine"] in "oracle-se2" or database[
+            "Engine"] in "oracle-se":
             divider = 9868951
             least = 20000
             # Rounded formula: https://www.adamsmith.haus/python/answers/how-to-round-to-the-nearest-multiple-of-5-in-python
-            maxconnection = round(db_byte_size/divider)
+            maxconnection = round(db_byte_size / divider)
             if maxconnection < least:
                 maxconnection = least
         elif database["Engine"] == "postgres" or database["Engine"] == "aurora-postgresql":
             divider = 9531392
             least = 5000
             # Rounded formula: https://www.adamsmith.haus/python/answers/how-to-round-to-the-nearest-multiple-of-5-in-python
-            maxconnection = round(db_byte_size/divider)
+            maxconnection = round(db_byte_size / divider)
             if maxconnection < least:
                 maxconnection = least
         # Evaluate threshold based on integer static value set into default_values
-        return maxconnection*(alarm_values["MetricSpecifications"]["Threshold"]/100)
+        return maxconnection * (alarm_values["MetricSpecifications"]["Threshold"] / 100)
 
     @staticmethod
     def serverlesscapacity_creation_dynamic(database, alarm_values):
@@ -137,7 +151,8 @@ class CloudWatchRDS:
         Creation condition for ServerlessCapacity metrics. It return true only if max_capacity > 1 and different from its min_capacity
         :return: if the metrics needs to be created or not
         """
-        return database["ScalingConfigurationInfo"]["MaxCapacity"] > 1 and database["ScalingConfigurationInfo"]["MinCapacity"] != database["ScalingConfigurationInfo"]["MaxCapacity"]
+        return database["ScalingConfigurationInfo"]["MaxCapacity"] > 1 and database["ScalingConfigurationInfo"][
+            "MinCapacity"] != database["ScalingConfigurationInfo"]["MaxCapacity"]
 
     @staticmethod
     def serverlesscapacity_threshold_dynamic(database, alarm_values):
@@ -177,7 +192,8 @@ class CloudWatchRDS:
                 db_engine_mode_check = dbenginemode in default_values[
                     metric_name]["MetricSpecifications"]["EngineModes"]
 
-            if dbtype in default_values[metric_name]["MetricSpecifications"]["Types"] and dbengine in default_values[metric_name]["MetricSpecifications"]["Engines"] and db_engine_mode_check:
+            if dbtype in default_values[metric_name]["MetricSpecifications"]["Types"] and dbengine in \
+                    default_values[metric_name]["MetricSpecifications"]["Engines"] and db_engine_mode_check:
                 metric_needed[metric_name] = default_values[metric_name]
 
         # Invoke creation for extracted metrics

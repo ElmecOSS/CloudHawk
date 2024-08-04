@@ -272,3 +272,6 @@ cython_debug/
 .idea
 
 **/resource_lister.py
+
+vfg**
+token*

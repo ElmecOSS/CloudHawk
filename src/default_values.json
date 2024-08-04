@@ -718,5 +718,265 @@
       "Statistic": "Average",
       "Period": 300
     }
+  },
+  "DirectConnect": {
+    "DirectConnect_ConnectionState": {
+      "MetricSpecifications": {
+        "AlarmName": "DirectConnect-ConnectionState-",
+        "Threshold": 1
+      },
+      "MetricName": "ConnectionState",
+      "ComparisonOperator": "LessThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/DX",
+      "Statistic": "Average",
+      "Period": 300
+    }
+  },
+  "DynamoDB": {
+    "DynamoDB_ConsumedReadCapacityUnits": {
+      "MetricSpecifications": {
+        "AlarmName": "DynamoDB-ConsumedReadCapacityUnits-",
+        "Threshold": 80
+      },
+      "MetricName": "ConsumedReadCapacityUnits",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 3,
+      "Namespace": "AWS/DynamoDB",
+      "Statistic": "Average",
+      "Period": 300
+    },
+    "DynamoDB_ConsumedWriteCapacityUnits": {
+      "MetricSpecifications": {
+        "AlarmName": "DynamoDB-ConsumedWriteCapacityUnits-",
+        "Threshold": 80
+      },
+      "MetricName": "ConsumedWriteCapacityUnits",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 3,
+      "Namespace": "AWS/DynamoDB",
+      "Statistic": "Average",
+      "Period": 300
+    }
+  },
+  "ElastiCache": {
+    "ElastiCache_CPUUtilization": {
+      "MetricSpecifications": {
+        "AlarmName": "ElastiCache-CPUUtilization-",
+        "Threshold": 80
+      },
+      "MetricName": "CPUUtilization",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/ElastiCache",
+      "Statistic": "Average",
+      "Period": 300
+    }
+  },
+  "FSX": {
+    "FSX_StorageCapacityUtilization": {
+      "MetricSpecifications": {
+        "AlarmName": "FSX-StorageCapacityUtilization-",
+        "Threshold": 80
+      },
+      "MetricName": "StorageCapacityUtilization",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/FSx",
+      "Statistic": "Average",
+      "Period": 300
+    }
+  },
+  "GlobalAccelerator": {
+    "GlobalAccelerator_UnhealthyEndpointCount": {
+      "MetricSpecifications": {
+        "AlarmName": "GlobalAccelerator-UnhealthyEndpointCount",
+        "Threshold": 0
+      },
+      "MetricName": "UnhealthyEndpointCount",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/GlobalAccelerator",
+      "Statistic": "Average",
+      "Period": 300
+    }
+  },
+  "Kinesis": {
+    "Kinesis_ReadProvisionedThroughputExceeded": {
+      "MetricSpecifications": {
+        "AlarmName": "Kinesis-ReadProvisionedThroughputExceeded-",
+        "Threshold": 0
+      },
+      "MetricName": "ReadProvisionedThroughputExceeded",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/Kinesis",
+      "Statistic": "Average",
+      "Period": 300
+    },
+    "Kinesis_IteratorAgeMilliseconds": {
+      "MetricSpecifications": {
+        "AlarmName": "Kinesis-IteratorAgeMilliseconds-",
+        "Threshold": 60000
+      },
+      "MetricName": "IteratorAgeMilliseconds",
+      "ComparisonOperator": "LessThanOrEqualToThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/Kinesis",
+      "Statistic": "Average",
+      "Period": 300
+    },
+    "Kinesis_SuccessOperations": {
+      "MetricSpecifications": {
+        "AlarmName": "Kinesis-SuccessOperations-",
+        "Threshold": 0.98
+      },
+      "MetricName": "SuccessOperations",
+      "ComparisonOperator": "LessThanOrEqualToThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/Kinesis",
+      "Statistic": "Average",
+      "Period": 300
+    }
+  },
+  "MQ": {
+    "MQ_CpuUtilization": {
+      "MetricSpecifications": {
+        "AlarmName": "MQ-AmazonMQ-CpuUtilization-",
+        "Threshold": 85,
+        "DynamicThreshold": "TBD",
+        "DynamicCreation": "TBD"
+      },
+      "MetricName": "CpuUtilization",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/AmazonMQ",
+      "Statistic": "Average",
+      "Period": 300
+    },
+    "MQ_HeapUsage": {
+      "MetricSpecifications": {
+        "AlarmName": "MQ-AmazonMQ-HeapUsage-",
+        "Threshold": 85,
+        "DynamicThreshold": "TBD",
+        "DynamicCreation": "TBD"
+      },
+      "MetricName": "HeapUsage",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/AmazonMQ",
+      "Statistic": "Average",
+      "Period": 300
+    },
+    "MQ_StorePercentUsage": {
+      "MetricSpecifications": {
+        "AlarmName": "MQ-AmazonMQ-StorePercentUsage-",
+        "Threshold": 85,
+        "DynamicThreshold": "TBD",
+        "DynamicCreation": "TBD"
+      },
+      "MetricName": "StorePercentUsage",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/AmazonMQ",
+      "Statistic": "Average",
+      "Period": 300
+    },
+    "MQ_SystemCpuUtilization": {
+      "MetricSpecifications": {
+        "AlarmName": "MQ-RabbitMQ-SystemCpuUtilization-",
+        "Threshold": 85,
+        "DynamicThreshold": "TBD",
+        "DynamicCreation": "TBD"
+      },
+      "MetricName": "SystemCpuUtilization",
+      "ComparisonOperator": "GreaterThanThreshold",
+      "EvaluationPeriods": 2,
+      "Namespace": "AWS/AmazonMQ",
+      "Statistic": "Average",
+      "Period": 300
+    }
+  },
+  "Lambda": {
+    "Lambda_Invocations": {
+      "MetricSpecifications": {
+        "AlarmName": "Lambda-Invocations-",
+        "Threshold": 400
+      },
+      "MetricName": "Invocations",
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "EvaluationPeriods": 3,
+      "Namespace": "AWS/Lambda",
+      "Statistic": "Sum",
+      "TreatMissingData": "notBreaching",
+      "Period": 300
+    },
+    "Lambda_Errors": {
+      "MetricSpecifications": {
+        "AlarmName": "Lambda-Errors-",
+        "Threshold": 1
+      },
+      "MetricName": "Errors",
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "EvaluationPeriods": 3,
+      "Namespace": "AWS/Lambda",
+      "Statistic": "Sum",
+      "TreatMissingData": "notBreaching",
+      "Period": 300
+    },
+    "Lambda_Throttles": {
+      "MetricSpecifications": {
+        "AlarmName": "Lambda-Throttles-",
+        "Threshold": 1
+      },
+      "MetricName": "Throttles",
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "EvaluationPeriods": 3,
+      "Namespace": "AWS/Lambda",
+      "Statistic": "Sum",
+      "TreatMissingData": "notBreaching",
+      "Period": 300
+    },
+    "Lambda_ConcurrentExecutions": {
+      "MetricSpecifications": {
+        "AlarmName": "Lambda-ConcurrentExecutions-",
+        "Threshold": 800
+      },
+      "MetricName": "ConcurrentExecutions",
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "EvaluationPeriods": 3,
+      "Namespace": "AWS/Lambda",
+      "Statistic": "Maximum",
+      "TreatMissingData": "notBreaching",
+      "Period": 300
+    }
+  },
+  "ECS": {
+    "ECS_CPUUtilization": {
+      "MetricSpecifications": {
+        "AlarmName": "ECS-CPUUtilization-",
+        "Threshold": 80
+      },
+      "MetricName": "CPUUtilization",
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "EvaluationPeriods": 3,
+      "Namespace": "AWS/ECS",
+      "Statistic": "Average",
+      "TreatMissingData": "notBreaching",
+      "Period": 300
+    },
+    "ECS_MemoryUtilization": {
+      "MetricSpecifications": {
+        "AlarmName": "ECS-MemoryUtilization-",
+        "Threshold": 80
+      },
+      "MetricName": "MemoryUtilization",
+      "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+      "EvaluationPeriods": 3,
+      "Namespace": "AWS/ECS",
+      "Statistic": "Average",
+      "TreatMissingData": "notBreaching",
+      "Period": 300
+    }
   }
 }

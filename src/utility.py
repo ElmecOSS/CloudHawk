@@ -17,13 +17,16 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ______________________________________________________
 
-import logging
 import copy
-from cw_services.cw_wrapper import CloudWatchWrapper
-from boto3.dynamodb.conditions import Key, Attr
+import json
+import logging
 import os
-import boto3
 from datetime import datetime, timedelta
+
+import boto3
+from boto3.dynamodb.conditions import Key
+
+from cw_services.cw_wrapper import CloudWatchWrapper
 
 LOGGER = logging.getLogger()
 
@@ -49,7 +52,7 @@ class Utility:
                 return item[excepted_value]
         return ""
 
-    @ staticmethod
+    @staticmethod
     def get_name_from_kubetag(tags):
         """
         This method is used to extract the name of the EKS cluster from the resource tag.
@@ -85,7 +88,8 @@ class Utility:
             grouped_metric = {}
             for metric in metrics:
                 local_key = Utility.get_value_from_dict(
-                    metric["Dimensions"], filter_key["key"], filter_key["excepted_key_value"], filter_key["excepted_value"])
+                    metric["Dimensions"], filter_key["key"], filter_key["excepted_key_value"],
+                    filter_key["excepted_value"])
                 if local_key not in grouped_metric:
                     grouped_metric[local_key] = []
                 grouped_metric[local_key].append(metric)
@@ -120,7 +124,9 @@ class Utility:
                 }
                 # Extract metric whose last datapoint is most recent
                 for metrics_data_result in metrics_data_results["MetricDataResults"]:
-                    if len(metrics_data_result["Timestamps"]) > 0 and (tmp_metric_evaluator["metric"] is None or (tmp_metric_evaluator["metric"] is not None and metrics_data_result["Timestamps"][00] > tmp_metric_evaluator["max_timestamp"])):
+                    if len(metrics_data_result["Timestamps"]) > 0 and (tmp_metric_evaluator["metric"] is None or (
+                            tmp_metric_evaluator["metric"] is not None and metrics_data_result["Timestamps"][00] >
+                            tmp_metric_evaluator["max_timestamp"])):
                         tmp_metric_evaluator["metric"] = local_metrics[int(
                             metrics_data_result["Id"].split("_")[1])]
                         tmp_metric_evaluator["max_timestamp"] = metrics_data_result["Timestamps"][00]
@@ -145,7 +151,8 @@ class Utility:
         return override_values
 
     @staticmethod
-    def get_default_parameters(monitoring_id, default_values, item_id=None, item_id_components=None, cb=None, extra_params=None):
+    def get_default_parameters(monitoring_id, default_values, item_id=None, item_id_components=None, cb=None,
+                               extra_params=None):
         """
         :param cb: callback, a reference to a function that needs to be invoked only if it is valued. The only requirement is that function return the entire monitoring detail 
         as its return is assigned to specific_value[monitoring_id]. For an example see the 'set_et_mc' in 'cw_ec2'
@@ -172,12 +179,12 @@ class Utility:
 
         if "alarm_prefix" in os.environ:
             alarm_name_prefix = os.environ["alarm_prefix"] + "-" + \
-                specific_values[monitoring_id]["MetricSpecifications"]["AlarmName"]
+                                specific_values[monitoring_id]["MetricSpecifications"]["AlarmName"]
         else:
             alarm_name_prefix = specific_values[monitoring_id]["MetricSpecifications"]["AlarmName"]
 
         specific_values[monitoring_id]["AlarmName"] = alarm_name_prefix + \
-            "-".join(item_id_el for item_id_el in item_id_components)
+                                                      "-".join(item_id_el for item_id_el in item_id_components)
 
         if dynamodb_table is not None:
             while len(item_id_components) > 0:
@@ -224,7 +231,8 @@ class Utility:
         return specific_values[monitoring_id]
 
     @staticmethod
-    def default_core_method(metric, class_to_invoke, item, ciname, cloudid, alarm_values, dimensions, cloudwatchclient):
+    def default_core_method(metric, class_to_invoke, item, ciname, cloudid, alarm_values, dimensions, cloudwatchclient,
+                            alarm_type=None):
         """
         :return: = True (alarm created) / False (alarm not created)
         """
@@ -261,7 +269,23 @@ class Utility:
             eventtype=eventtype,
             monitorcomponent=monitorcomponent,
             impact=impact,
+            alarm_type=alarm_type,
             kwargs={
                 **alarm_values
-            })
+            }
+        )
         return True
+
+    @staticmethod
+    def get_full_default_values_file():
+        file_name = "default_values.json"
+        external_path = os.getenv('default_values_file_path')  # Final / is required
+        if external_path is not None:
+            s3_resource = boto3.resource('s3')
+            obj = s3_resource.Object("cloudhawk-default-values-rewrite-file", f"{external_path}{file_name}")
+            default_values = json.loads(obj.get()['Body'].read().decode('utf-8'))
+        else:
+            with open(file_name) as json_file:
+                default_values = json.load(json_file)
+
+        return default_values

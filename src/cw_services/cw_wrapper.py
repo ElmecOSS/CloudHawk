@@ -77,7 +77,7 @@ class CloudWatchWrapper:
             return metrics
 
     @staticmethod
-    def create_metric_alarm(cloudwatchclient, kwargs, ci="", cloudid="", eventtype="", monitorcomponent="", impact=3):
+    def create_metric_alarm(cloudwatchclient, kwargs, ci="", cloudid="", eventtype="", monitorcomponent="", impact=3, alarm_type=None):
         """
         Creates an alarm that watches a metric.
 
@@ -132,7 +132,10 @@ class CloudWatchWrapper:
 
         # Not specified = default (check environment variable)
         if "AlarmActions" not in kwargs:
-            kwargs["AlarmActions"] = os.environ["sns_topic_arn"].split(";")
+            if alarm_type == "globalaccelerator":
+                 kwargs["AlarmActions"] = os.environ["sns_topic_arn_globalaccelerator"].split(";")
+            else:
+                kwargs["AlarmActions"] = os.environ["sns_topic_arn"].split(";")
         # If explicit empty, remove them
         elif kwargs["AlarmActions"] == "":
             kwargs.pop("AlarmActions")
@@ -142,7 +145,10 @@ class CloudWatchWrapper:
 
         # Not specified = default (check environment variable)
         if "OKActions" not in kwargs:
-            kwargs["OKActions"] = os.environ["sns_topic_arn"].split(";")
+            if alarm_type == "globalaccelerator":
+                kwargs["OKActions"] = os.environ["sns_topic_arn_globalaccelerator"].split(";")
+            else:
+                kwargs["OKActions"] = os.environ["sns_topic_arn"].split(";")
         # If explicit empty, remove them
         elif kwargs["OKActions"] == "":
             kwargs.pop("OKActions")
